@@ -5,7 +5,7 @@ Webpage for displaying Events with the Google Charts Sankey Diagramm out of a JS
 </br>Google MDL Template: https://getmdl.io/templates/index.html
 </br>Google Charts Sankey Diagramm: https://developers.google.com/chart/interactive/docs/gallery/sankey
 
-</br><img src="./images/Example.png" width="500" height=auto />
+</br><img src="./images/Example.png" width="800" height=auto />
 
 
 # Data
