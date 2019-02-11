@@ -1,0 +1,239 @@
+<!doctype html>
+
+<head>
+        <script>
+    
+        </script>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="description" content="History Service Reporting Website">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+        <title>Eventflow Report</title>
+    
+        <link rel="shortcut icon" href="images/favicon.png">
+    
+        <!-- SEO: If your mobile URL is different from the desktop URL, add a canonical link to the desktop page https://developers.google.com/webmasters/smartphone-sites/feature-phones -->
+        <!--
+        <link rel="canonical" href="http://www.example.com/">
+        -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <link rel="stylesheet"
+              href="https://fonts.googleapis.com/css?family=Roboto:regular,bold,italic,thin,light,bolditalic,black,medium&amp;lang=en">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+        <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.blue_grey-blue.min.css"/>
+        <link rel="stylesheet" href="styles.css">
+        <style>
+            #view-source {
+                position: fixed;
+                display: block;
+                right: 0;
+                bottom: 0;
+                margin-right: 40px;
+                margin-bottom: 40px;
+                z-index: 900;
+            }
+        </style>
+    </head>
+    <body>
+    <div class="demo-layout mdl-layout mdl-js-layout mdl-layout--fixed-drawer mdl-layout--fixed-header" style="height:100vh">
+        <header class="demo-header mdl-layout__header mdl-color--grey-100 mdl-color-text--grey-600">
+            <div class="mdl-layout__header-row">
+                <div style="width: 20%"></div>
+                <span class="mdl-layout-title">User Flow</span>
+                <div style="margin-left: 100px">
+                <label for="stepswidth">Steps</label>
+                <input style="margin-left:10px; width:50px; font-size: medium" id="stepswidth" type="number" max="100" value="10"/>
+                <select style="margin-left:10px; width:100px; font-size: medium" id="selweight">
+                    <option value="abs" selected="true">Absolut</option>
+                    <option value="proz">Percentual</option>
+                </select>
+                <button id="stepbutton" class="mdl-button mdl-js-button">
+                    Confirm
+                </button></div>
+               
+            </div>
+        </header>
+        <div w3-include-html="nav.html" id="drawer"
+             class="demo-drawer mdl-layout__drawer mdl-color--blue-grey-900 mdl-color-text--blue-grey-50">
+             <header class="demo-drawer-header">
+                <img src="images/logo.png">
+            </header>
+            <nav class="demo-navigation mdl-navigation mdl-color--blue-grey-800">
+                <a class="mdl-navigation__link" href=""><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">widgets</i>Userflow</a>
+                <a class="mdl-navigation__link" href=""><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">widgets</i>Reverse Flow</a>            
+                <div class="mdl-layout-spacer"></div>
+            </nav>
+            
+    
+        </div>
+        <main class="mdl-layout__content mdl-color--grey-50 " style=" height:100%">
+            <div id="sankey-content" class="mdl-grid demo-content layout-fill" style="max-width: 100%; height:95%">
+                <div id="progressbar" class="mdl-grid" style="height: 100%; width:100%; display:inherit">
+                    <div class="mdl-layout-spacer mdl-cell--12-col"></div>
+                    <div class="mdl-layout-spacer mdl-cell--4-col"></div>
+                    <!-- MDL Progress Bar with Indeterminate Progress -->
+                    <div id="p1"
+                         class="mdl-progress is-active mdl-js-progress mdl-progress__indeterminate mdl-cell--4-col"></div>
+                    <div class="mdl-layout-spacer mdl-cell--4-col"></div>
+                </div>
+                <div id="sankey_basic" style="width: 90%; height: 100%; overflow-x: auto; overflow-y:hidden"></div>
+    
+            </div>
+        </main>
+    </div>
+
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script type="text/javascript">
+    $("#progressbar").css("display", "inherit");
+    function loadJson(file, callback) {
+        var xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                //console.log(xhr.responseText)
+                callback(xhr.responseText);
+            }
+        }
+        xhr.open('GET', file, false);
+        xhr.send();
+    }
+    function loadMapdata(){
+        var map
+        loadJson("data/map.json",function(response){
+            map = JSON.parse(response);
+        });
+        return map
+    }
+    function loadEventdata() {
+        var startEvents
+
+
+        loadJson("data/events.json", function (response) {
+            // Parse JSON string into object
+            startEvents = JSON.parse(response);
+        });
+
+
+
+        dataForChart = JSON.parse('{"Events":{}}')
+
+        for (var i = 0; i < startEvents["AllEvents"].length; i++) {
+            var obj = startEvents["AllEvents"][i];
+            for (var j = 0; j < obj["Events"].length; j++) {
+                if (typeof dataForChart["Events"][j] == "undefined") {
+                    dataForChart["Events"][j] = []
+                }
+                var from = obj["Events"][j]
+                var to = 0
+                if (typeof obj["Events"][j + 1] == "undefined") {
+                    to = 999
+                } else { to = obj["Events"][j + 1] }
+                var token = true
+                $.each(dataForChart["Events"][j], function (index, value) {
+
+                    ostr = JSON.stringify(value)
+                    var txt = '{"from":' + from + ',"to":' + to
+                    
+                    if (ostr.includes(txt)) {
+                        console.log("True")
+                        value["weight"] += 1
+                        token = false
+                    }
+                   
+                });
+                if (token) {
+                    dataForChart["Events"][j].push(JSON.parse('{"from":' + from + ',"to":' + to + ', "weight":1}'))
+                }
+
+            }
+
+        }
+        return dataForChart
+    }
+
+    
+
+
+    function addStepToRow(step, events, data,map, selweight) {
+        var summ=0
+        for (k = 0; k < events.length; k++) {
+          summ+=events[k]["weight"]
+        }
+        
+        for (j = 0; j < events.length; j++) {
+            first = events[j]["from"]
+            second = events[j]["to"]
+            
+            first = step + "-" + map[first];
+            second = (step + 1) + "-" + map[second];
+            var weight = 0
+            
+            if (selweight.localeCompare("proz") == 0) {
+                weight = (events[j]["weight"] / summ) * 100;
+            }
+            else {
+                weight = events[j]["weight"];
+            }
+            data.addRow([first, second, weight])
+        }
+    }
+
+    function drawChart() {
+        $("#progressbar").css("display", "inherit");
+        steps=$("#stepswidth").val()
+        mode=$("#selweight").val()
+        events=loadEventdata();
+        map=loadMapdata();
+        document.getElementById('sankey_basic').innerHTML = ""
+        let numberstring = "Users"
+        if (mode.localeCompare("proz") == 0) {
+            numberstring += " %"
+        }
+
+        let data = new google.visualization.DataTable();
+        data.addColumn('string', 'From');
+        data.addColumn('string', 'To');
+        data.addColumn('number', numberstring);
+        
+        max=Object.keys(events["Events"]).length
+        if(steps>max){steps=max}
+        for (i = 0; i < steps && i <max; i++) {
+
+            addStepToRow(i, events["Events"][i], data,map, mode)
+        }
+
+
+        var options = {
+
+            width: 200 * steps,
+            height: '90%',
+            sankey: {
+                node: { width: 20, nodePadding: 10 }, iterations: 1000
+
+
+            }
+        };
+
+        // Instantiates and draws our chart, passing in some options.
+        var chart = new google.visualization.Sankey(document.getElementById('sankey_basic'));
+        console.log(data)
+        chart.draw(data, options);
+
+        $("#progressbar").css("display", "none");
+    }
+
+    google.charts.load('current', { 'packages': ['sankey'] });
+    google.charts.setOnLoadCallback(drawChart);
+
+
+
+    $("#stepbutton").click(function(){
+        if($("#stepswidth").val()>100){
+            alert("Please enter valuer under 100")
+        }
+        else{
+        drawChart();}
+
+    });
+</script>
+
+</html>
